@@ -1,0 +1,42 @@
+version: '3'
+
+services:
+
+  apache:
+    build: ./php-apache
+    container_name: APACHE
+    volumes:
+      - ./src:/var/www/apache-server/html
+      - ./ApacheServerConf/apache2.conf:/etc/apache2/sites-enabled/000-default.conf
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:latest
+    container_name: NGINX
+    ports:
+      - 80:80
+    volumes:
+      - ./src:/var/www/apache-server/html
+      - ./NginxServerConf/nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - apache
+
+  mysql:
+    container_name: MYSQL
+    hostname: MYSQL
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      HOSTNAME: MYSQL
+    volumes:
+      - "./sql:/docker-entrypoint-initdb.d"
+      - "dbdata:/var/lib/mysql"
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      timeout: 1s
+      retries: 10
+
+volumes:
+  dbdata:
